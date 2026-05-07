@@ -1,4 +1,4 @@
-# 💰 Salário em Dia
+# 💰 Salário em Dia a dia
 
 ## 📖 Sobre o Jogo
 
