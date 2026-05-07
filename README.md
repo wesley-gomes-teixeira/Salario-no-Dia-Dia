@@ -1,8 +1,8 @@
-# 💰 Salário em Dia a dia
+# 💰 Salário no Dia a dia
 
 ## 📖 Sobre o Jogo
 
-**Salário em Dia** é um simulador que coloca você na pele de uma pessoa com salário mensal de R$ 1.800. Ao longo de 4 semanas, você toma decisões financeiras reais e vê as consequências de suas escolhas refletidas no seu saldo e bem-estar.
+**Salário no dia a dia** é um simulador que coloca você na pele de uma pessoa com salário mensal de R$ 1.800. Ao longo de 4 semanas, você toma decisões financeiras reais e vê as consequências de suas escolhas refletidas no seu saldo e bem-estar.
 
 O jogo foi criado para educar sobre:
 - 💵 Gestão de orçamento pessoal
