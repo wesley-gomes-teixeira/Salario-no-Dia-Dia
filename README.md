@@ -1,4 +1,5 @@
 # 💰 Salário no Dia a dia
+<a href="https://play.juicemind.com/sandbox/QzK9kcwnRwUFbwxSOZnT">Jogar</a>
 
 ## 📖 Sobre o Jogo
 
