@@ -238,10 +238,18 @@ class GameState:
         return C_RED
 
     def resultado_final(self):
-        if self.saldo > 800 and self.humor > 60:
-            return "excelente"
-        if self.saldo > 400 and self.humor > 30:
-            return "ok"
+        # Conta decisões positivas (efeito >= 0) no histórico via saldo/humor acumulado
+        # Critério: saldo E humor ambos pesam igualmente
+        pontos = 0
+        if self.saldo > 900:  pontos += 2
+        elif self.saldo > 500: pontos += 1
+        if self.humor > 70:   pontos += 2
+        elif self.humor > 40: pontos += 1
+        # Bônus por reserva (saldo alto no fim = disciplina)
+        if self.saldo > 700 and self.humor > 55: pontos += 1
+
+        if pontos >= 4:   return "excelente"
+        if pontos >= 2:   return "ok"
         return "ruim"
 
 gs = GameState()
@@ -438,62 +446,193 @@ def draw_jogo():
     draw_particulas()
 
 # ─────────────────────────────────────────────
-#  TELA FIM
+#  TELA FIM — 3 FINAIS DISTINTOS
 # ─────────────────────────────────────────────
-btn_restart = pygame.Rect(WIDTH//2 - 130, HEIGHT - 80, 260, 50)
+btn_restart = pygame.Rect(WIDTH//2 - 130, HEIGHT - 70, 260, 48)
+_fim_tick = 0  # controla animações da tela de fim
+
+def _draw_fim_excelente():
+    """Final 1 — Investidor Consciente. Fundo escuro-esverdeado, troféu animado."""
+    # fundo temático
+    screen.fill((14, 26, 22))
+    t = pygame.time.get_ticks() / 1000
+
+    # brilhos de fundo
+    for i in range(6):
+        angle = t * 0.4 + i * (math.pi / 3)
+        cx = int(WIDTH//2 + math.cos(angle) * 260)
+        cy = int(240 + math.sin(angle) * 80)
+        s = pygame.Surface((120, 120), pygame.SRCALPHA)
+        pygame.draw.circle(s, (72, 199, 142, 18), (60, 60), 60)
+        screen.blit(s, (cx - 60, cy - 60))
+
+    # banner topo
+    draw_rect_rounded(screen, (20, 60, 40), (20, 18, WIDTH-40, 80), 16)
+    pygame.draw.rect(screen, C_GREEN, (20, 18, WIDTH-40, 80), 2, border_radius=16)
+    t1 = font_big.render("🏆  INVESTIDOR CONSCIENTE!", True, C_GREEN)
+    blit_center(screen, t1, 48)
+    t2 = font_small.render("Você dominou o mês com disciplina e equilíbrio.", True, C_GRAY)
+    blit_center(screen, t2, 78)
+
+    # narrativa
+    draw_rect_rounded(screen, (20, 50, 36), (20, 108, WIDTH-40, 72), 12)
+    narrativa = (
+        "Parabéns! Você pagou todas as contas em dia, resistiu às compras por impulso,"
+        " cuidou da saúde e ainda guardou uma reserva. Poucas pessoas chegam aqui."
+    )
+    draw_text_wrapped(screen, narrativa, font_small, C_WHITE, 36, 120, WIDTH - 80)
+
+    # stats lado a lado
+    draw_rect_rounded(screen, (20, 50, 36), (20, 190, (WIDTH-50)//2, 110), 12)
+    draw_rect_rounded(screen, (20, 50, 36), (30 + (WIDTH-50)//2, 190, (WIDTH-50)//2, 110), 12)
+
+    screen.blit(font_tiny.render("💰 SALDO FINAL", True, C_GRAY), (40, 204))
+    screen.blit(font_big.render(f"R$ {gs.saldo:,.2f}", True, C_GREEN), (40, 224))
+    screen.blit(font_tiny.render("Reserva formada ✅", True, C_GREEN), (40, 260))
+
+    hx = 36 + (WIDTH-50)//2
+    screen.blit(font_tiny.render("❤️  BEM-ESTAR", True, C_GRAY), (hx, 204))
+    screen.blit(font_big.render(f"{gs.humor}%", True, C_GREEN), (hx, 224))
+    draw_bar(screen, hx, 258, 160, 14, gs.humor/100, C_PANEL2, C_GREEN, 7)
+
+    # conquistas
+    draw_rect_rounded(screen, (20, 50, 36), (20, 312, WIDTH-40, 130), 12)
+    screen.blit(font_med.render("🌟 Conquistas desbloqueadas:", True, C_WHITE), (36, 322))
+    conquistas = [
+        "🥇 Pagador Pontual — nenhum boleto atrasado",
+        "🧠 Anti-impulso — resistiu à compra desnecessária",
+        "🌱 Poupador — reserva de emergência criada",
+    ]
+    for i, c in enumerate(conquistas):
+        screen.blit(font_small.render(c, True, C_ACCENT), (36, 350 + i * 30))
+
+    # dica final
+    screen.blit(font_tiny.render("💡 Próximo nível: diversifique seus investimentos (CDB, Tesouro, Ações).", True, C_GRAY), (36, 446))
+
+
+def _draw_fim_ok():
+    """Final 2 — Em Recuperação. Fundo azul-acinzentado, progresso visível."""
+    screen.fill((16, 20, 36))
+    t = pygame.time.get_ticks() / 1000
+
+    # brilhos amarelados sutis
+    for i in range(4):
+        angle = t * 0.3 + i * (math.pi / 2)
+        cx = int(WIDTH//2 + math.cos(angle) * 200)
+        cy = int(250 + math.sin(angle) * 60)
+        s = pygame.Surface((100, 100), pygame.SRCALPHA)
+        pygame.draw.circle(s, (255, 200, 60, 14), (50, 50), 50)
+        screen.blit(s, (cx-50, cy-50))
+
+    # banner topo
+    draw_rect_rounded(screen, (40, 36, 16), (20, 18, WIDTH-40, 80), 16)
+    pygame.draw.rect(screen, C_YELLOW, (20, 18, WIDTH-40, 80), 2, border_radius=16)
+    t1 = font_big.render("📈  EM RECUPERAÇÃO", True, C_YELLOW)
+    blit_center(screen, t1, 48)
+    t2 = font_small.render("Você sobreviveu ao mês — mas deu pra fazer melhor.", True, C_GRAY)
+    blit_center(screen, t2, 78)
+
+    # narrativa
+    draw_rect_rounded(screen, C_PANEL, (20, 108, WIDTH-40, 72), 12)
+    narrativa = (
+        "O mês foi corrido. Algumas decisões por impulso pesaram, mas você se manteve"
+        " de pé. A boa notícia: cada mês é uma nova chance de ajustar a rota."
+    )
+    draw_text_wrapped(screen, narrativa, font_small, C_WHITE, 36, 120, WIDTH - 80)
+
+    # stats
+    draw_rect_rounded(screen, C_PANEL, (20, 190, (WIDTH-50)//2, 110), 12)
+    draw_rect_rounded(screen, C_PANEL, (30 + (WIDTH-50)//2, 190, (WIDTH-50)//2, 110), 12)
+
+    screen.blit(font_tiny.render("💰 SALDO FINAL", True, C_GRAY), (40, 204))
+    screen.blit(font_big.render(f"R$ {gs.saldo:,.2f}", True, C_YELLOW), (40, 224))
+    aviso = "⚠️ Sem reserva" if gs.saldo < 500 else "🟡 Reserva parcial"
+    screen.blit(font_tiny.render(aviso, True, C_YELLOW), (40, 260))
+
+    hx = 36 + (WIDTH-50)//2
+    screen.blit(font_tiny.render("❤️  BEM-ESTAR", True, C_GRAY), (hx, 204))
+    screen.blit(font_big.render(f"{gs.humor}%", True, C_YELLOW), (hx, 224))
+    draw_bar(screen, hx, 258, 160, 14, gs.humor/100, C_PANEL2, C_YELLOW, 7)
+
+    # o que melhorar
+    draw_rect_rounded(screen, C_PANEL, (20, 312, WIDTH-40, 130), 12)
+    screen.blit(font_med.render("🔧 O que melhorar no próximo mês:", True, C_WHITE), (36, 322))
+    dicas = [
+        "📌 Anote todos os gastos fixos ANTES de receber o salário",
+        "📌 Regra dos 3 dias: espere 3 dias antes de compra por impulso",
+        "📌 Separe 10% do salário assim que receber (pague-se primeiro)",
+    ]
+    for i, d in enumerate(dicas):
+        screen.blit(font_small.render(d, True, C_GRAY), (36, 350 + i * 30))
+
+    screen.blit(font_tiny.render("💡 Você está no caminho certo. Consistência é tudo!", True, C_YELLOW), (36, 446))
+
+
+def _draw_fim_ruim():
+    """Final 3 — Endividado. Fundo vermelho-escuro, visual de alerta."""
+    screen.fill((22, 10, 10))
+    t = pygame.time.get_ticks() / 1000
+
+    # pulso vermelho de fundo
+    pulse = abs(math.sin(t * 1.5))
+    s = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    pygame.draw.rect(s, (255, 60, 60, int(12 * pulse)), (0, 0, WIDTH, HEIGHT))
+    screen.blit(s, (0, 0))
+
+    # banner topo
+    draw_rect_rounded(screen, (50, 16, 16), (20, 18, WIDTH-40, 80), 16)
+    pygame.draw.rect(screen, C_RED, (20, 18, WIDTH-40, 80), 2, border_radius=16)
+    t1 = font_big.render("😰  MÊS NO VERMELHO", True, C_RED)
+    blit_center(screen, t1, 48)
+    t2 = font_small.render("As escolhas acumularam e o orçamento colapsou.", True, C_GRAY)
+    blit_center(screen, t2, 78)
+
+    # narrativa de impacto emocional
+    draw_rect_rounded(screen, (40, 18, 18), (20, 108, WIDTH-40, 72), 12)
+    narrativa = (
+        "O mês foi pesado. Imprevistos sem reserva, gastos por impulso e boletos"
+        " ignorados criaram uma bola de neve. Mas reconhecer o problema é o primeiro passo."
+    )
+    draw_text_wrapped(screen, narrativa, font_small, C_WHITE, 36, 120, WIDTH - 80)
+
+    # stats
+    draw_rect_rounded(screen, (40, 18, 18), (20, 190, (WIDTH-50)//2, 110), 12)
+    draw_rect_rounded(screen, (40, 18, 18), (30 + (WIDTH-50)//2, 190, (WIDTH-50)//2, 110), 12)
+
+    screen.blit(font_tiny.render("💰 SALDO FINAL", True, C_GRAY), (40, 204))
+    screen.blit(font_big.render(f"R$ {gs.saldo:,.2f}", True, C_RED), (40, 224))
+    screen.blit(font_tiny.render("❌ Sem reserva de emergência", True, C_RED), (40, 260))
+
+    hx = 36 + (WIDTH-50)//2
+    screen.blit(font_tiny.render("❤️  BEM-ESTAR", True, C_GRAY), (hx, 204))
+    screen.blit(font_big.render(f"{gs.humor}%", True, C_RED), (hx, 224))
+    draw_bar(screen, hx, 258, 160, 14, gs.humor/100, C_PANEL2, C_RED, 7)
+
+    # lições urgentes
+    draw_rect_rounded(screen, (40, 18, 18), (20, 312, WIDTH-40, 130), 12)
+    screen.blit(font_med.render("🚨 Lições urgentes:", True, C_WHITE), (36, 322))
+    licoes = [
+        "❌ Gastos por impulso destroem orçamentos inteiros",
+        "❌ Ignorar saúde gera custos maiores depois",
+        "💡 Regra 50-30-20: necessidades / desejos / reserva",
+        "💡 Reserva de emergência = 3 a 6 meses de gastos",
+    ]
+    for i, l in enumerate(licoes):
+        cor = C_RED if l.startswith("❌") else C_GRAY
+        screen.blit(font_small.render(l, True, cor), (36, 350 + i * 28))
+
 
 def draw_fim():
-    screen.fill(C_BG)
     resultado = gs.resultado_final()
 
-    emoji_map  = {"excelente": "🏆", "ok": "👍", "ruim": "😰"}
-    titulo_map = {"excelente": "MÊS CONCLUÍDO COM SUCESSO!", "ok": "MÊS OK — PODE MELHORAR", "ruim": "MÊS DIFÍCIL..."}
-    cor_map    = {"excelente": C_GREEN, "ok": C_YELLOW, "ruim": C_RED}
+    if resultado == "excelente":
+        _draw_fim_excelente()
+    elif resultado == "ok":
+        _draw_fim_ok()
+    else:
+        _draw_fim_ruim()
 
-    draw_rect_rounded(screen, C_PANEL, (20, 20, WIDTH-40, 100), 16)
-    t_surf = font_big.render(f"{emoji_map[resultado]} {titulo_map[resultado]}", True, cor_map[resultado])
-    blit_center(screen, t_surf, 60)
-
-    # estatísticas
-    draw_rect_rounded(screen, C_PANEL, (20, 130, WIDTH-40, 120), 14)
-    stats = [
-        (f"💰 Saldo final:", f"R$ {gs.saldo:.2f}", gs.cor_saldo()),
-        (f"❤️  Bem-estar:", f"{gs.humor}%", gs.cor_humor()),
-        (f"📊 Decisões tomadas:", f"{len(gs.historico)}", C_ACCENT),
-    ]
-    for i, (label, val, cor) in enumerate(stats):
-        l_s = font_small.render(label, True, C_GRAY)
-        v_s = font_med.render(val, True, cor)
-        screen.blit(l_s, (40, 145 + i*34))
-        screen.blit(v_s, (360, 145 + i*34))
-
-    # lições
-    draw_rect_rounded(screen, C_PANEL, (20, 260, WIDTH-40, 200), 14)
-    screen.blit(font_med.render("📚 Lições desta jornada:", True, C_WHITE), (40, 272))
-    licoes_map = {
-        "excelente": [
-            "✅ Você planejou gastos fixos com antecedência.",
-            "✅ Manteve equilíbrio entre lazer e economia.",
-            "✅ Criou ou reforçou sua reserva de emergência.",
-            "💡 Próximo passo: investir regularmente.",
-        ],
-        "ok": [
-            "⚠️ Algumas decisões por impulso pesaram no saldo.",
-            "💡 Planeje os gastos antes de receber o salário.",
-            "💡 Guarde ao menos 10% todo mês como reserva.",
-        ],
-        "ruim": [
-            "❌ Gastos por impulso comprometeram o orçamento.",
-            "❌ Falta de reserva tornou imprevistos críticos.",
-            "💡 Regra 50-30-20: necessidades, desejos, reserva.",
-            "💡 Todo mês é uma nova chance de melhorar!",
-        ],
-    }
-    for i, licao in enumerate(licoes_map[resultado]):
-        l_s = font_small.render(licao, True, C_GRAY)
-        screen.blit(l_s, (40, 305 + i * 36))
-
-    # botão reiniciar
+    # botão reiniciar — igual nos 3 finais
     btn_cor = C_ACCENT if btn_restart.collidepoint(pygame.mouse.get_pos()) else C_BLUE
     draw_rect_rounded(screen, btn_cor, btn_restart, 14)
     r_surf = font_med.render("🔄  Jogar Novamente", True, C_BG)
